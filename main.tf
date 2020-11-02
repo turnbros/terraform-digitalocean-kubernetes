@@ -9,7 +9,7 @@ resource "random_pet" "nodegroup_name" {
 resource "digitalocean_kubernetes_cluster" "kubernetes_cluster" {
   name          = var.name
   region        = var.region
-  version       = var.k8s_version == null ? data.digitalocean_kubernetes_versions.eligible_versions.latest_version : data.digitalocean_kubernetes_versions.eligible_versions.latest_version
+  version       = var.k8s_version == null ? data.digitalocean_kubernetes_versions.eligible_versions.latest_version : var.k8s_version
   vpc_uuid      = var.vpc_uuid
   auto_upgrade  = var.auto_upgrade
   surge_upgrade = var.surge_upgrade
