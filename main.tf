@@ -2,8 +2,11 @@ data "digitalocean_kubernetes_versions" "eligible_versions" {
   version_prefix = var.k8s_version
 }
 
-resource "random_pet" "nodegroup_name" {
-  count = length(var.cluster_node_groups)
+resource "random_pet" "default_nodegroup_name" {
+}
+
+resource "random_pet" "extra_nodegroup_names" {
+  count = length(var.extra_cluster_node_groups)
 }
 
 resource "digitalocean_kubernetes_cluster" "kubernetes_cluster" {
@@ -14,18 +17,29 @@ resource "digitalocean_kubernetes_cluster" "kubernetes_cluster" {
   auto_upgrade  = var.auto_upgrade
   surge_upgrade = var.surge_upgrade
 
-  dynamic "node_pool" {
-    for_each = var.cluster_node_groups
-    content {
-      name       = random_pet.nodegroup_name[node_pool.key].id
-      size       = node_pool.value.size
-      node_count = node_pool.value.node_count
-      auto_scale = node_pool.value.auto_scale
-      min_nodes  = node_pool.value.min_nodes
-      max_nodes  = node_pool.value.max_nodes
-      labels     = merge(node_pool.value.labels, local.default_node_labels)
-      tags       = concat(node_pool.value.tags, local.default_cluster_tags)
-    }
+  node_pool {
+    name       = random_pet.default_nodegroup_name.id
+    size       = var.default_cluster_node_group.size
+    node_count = var.default_cluster_node_group.node_count
+    auto_scale = var.default_cluster_node_group.auto_scale
+    min_nodes  = var.default_cluster_node_group.min_nodes
+    max_nodes  = var.default_cluster_node_group.max_nodes
+    labels     = merge(var.default_cluster_node_group.labels, local.default_node_labels)
+    tags       = concat(var.default_cluster_node_group.tags, local.default_cluster_tags)
   }
+
   tags = concat(var.tags, local.default_cluster_tags)
+}
+
+resource "digitalocean_kubernetes_node_pool" "kubernetes_cluster_node_pool" {
+  count      = length(var.extra_cluster_node_groups)
+  cluster_id = digitalocean_kubernetes_cluster.kubernetes_cluster.id
+  name       = random_pet.extra_nodegroup_names[count.index].id
+  size       = var.extra_cluster_node_groups[count.index].size
+  node_count = var.extra_cluster_node_groups[count.index].node_count
+  auto_scale = var.extra_cluster_node_groups[count.index].auto_scale
+  min_nodes  = var.extra_cluster_node_groups[count.index].min_nodes
+  max_nodes  = var.extra_cluster_node_groups[count.index].max_nodes
+  labels     = merge(var.extra_cluster_node_groups[count.index].labels, local.default_node_labels)
+  tags       = concat(var.extra_cluster_node_groups[count.index].tags, local.default_cluster_tags)
 }

@@ -31,7 +31,19 @@ variable "surge_upgrade" {
   type = bool
 }
 
-variable "cluster_node_groups" {
+variable "default_cluster_node_group" {
+  type = object({
+    size : string,
+    node_count : number,
+    auto_scale : bool,
+    min_nodes : number,
+    max_nodes : number,
+    tags : list(string),
+    labels : map(string),
+  })
+}
+
+variable "extra_cluster_node_groups" {
   type = list(object({
     size : string,
     node_count : number,
